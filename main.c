@@ -67,7 +67,6 @@ static double midloc[] = {
 };
 
 static int opt_verbose = 0;
-static int opt_fallback_sound = 0;
 static int opt_mute_keycode = DEFAULT_MUTE_KEYCODE;
 static const char *opt_device = NULL;
 static const char *opt_path_audio = PATH_AUDIO;
@@ -83,9 +82,6 @@ int main(int argc, char **argv)
 		switch(c) {
 			case 'd':
 				opt_device = optarg;
-				break;
-			case 'f':
-				opt_fallback_sound = 1;
 				break;
 			case 'h':
 				usage(argv[0]);
@@ -178,14 +174,11 @@ static void usage(char *exe)
 		"options:\n"
 		"\n"
 		"  -d DEVICE use OpenAL audio device DEVICE\n"
-		"  -f        use a fallback sound for unknown keys\n"
-		"  -g GAIN   set playback gain [0..100]\n"
 		"  -m CODE   use CODE as mute key (default 0x46 for scroll lock)\n"
 		"  -M        start the program muted\n"
 		"  -h        show help\n"
 		"  -l        list available openAL audio devices\n"
 		"  -p PATH   load .wav files from directory PATH\n"
-		"  -s WIDTH  set stereo width [0..100]\n"
 		"  -v        increase verbosity / debugging\n",
 		exe
        );
@@ -307,14 +300,7 @@ int play(int code, int press)
 
 		buf[idx] = alureCreateBufferFromFile(fname);
 		if(buf[idx] == 0) {
-
-			if(opt_fallback_sound) {
-				snprintf(fname, sizeof(fname), "%s/%02x-%d.wav", opt_path_audio, 0x31, press);
-				buf[idx] = alureCreateBufferFromFile(fname);
-			} else {
-				fprintf(stderr, "Error opening audio file \"%s\": %s\n", fname, alureGetErrorString());
-			}
-
+			fprintf(stderr, "Error opening audio file \"%s\": %s\n", fname, alureGetErrorString());
 			if(buf[idx] == 0) {
 				src[idx] = SRC_INVALID;
 				return -1;
