@@ -33,7 +33,6 @@
 
 
 static void usage(char *exe);
-static void list_devices(void);
 static double find_key_loc(int code);
 
 
@@ -78,16 +77,13 @@ int main(int argc, char **argv)
 	int c;
 	int rv = EXIT_SUCCESS;
 
-	while( (c = getopt(argc, argv, "Mfhm:vd:g:lp:s:")) != EOF) {
+	while( (c = getopt(argc, argv, "Mhm:vd:p:")) != EOF) {
 		switch(c) {
 			case 'd':
 				opt_device = optarg;
 				break;
 			case 'h':
 				usage(argv[0]);
-				return 0;
-			case 'l':
-				list_devices();
 				return 0;
 			case 'm':
 				opt_mute_keycode = strtol(optarg, NULL, 0);
@@ -177,29 +173,11 @@ static void usage(char *exe)
 		"  -m CODE   use CODE as mute key (default 0x46 for scroll lock)\n"
 		"  -M        start the program muted\n"
 		"  -h        show help\n"
-		"  -l        list available openAL audio devices\n"
 		"  -p PATH   load .wav files from directory PATH\n"
 		"  -v        increase verbosity / debugging\n",
 		exe
        );
 }
-
-static void list_devices(void)
-{
-	const ALCchar *devices = alcGetString(NULL, ALC_DEVICE_SPECIFIER);
-	const ALCchar *device = devices, *next = devices + 1;
-	size_t len = 0;
-
-	printf("Available audio devices:");
-	while (device && *device != '\0' && next && *next != '\0') {
-		fprintf(stdout, " \"%s\"", device);
-		len = strlen(device);
-		device += (len + 1);
-		next += (len + 2);
-	}
-	printf("\n");
-}
-
 
 void printd(const char *fmt, ...)
 {
