@@ -67,7 +67,6 @@ static double midloc[] = {
 };
 
 static int opt_verbose = 0;
-static int opt_stereo_width = 50;
 static int opt_gain = 100;
 static int opt_fallback_sound = 0;
 static int opt_mute_keycode = DEFAULT_MUTE_KEYCODE;
@@ -109,9 +108,6 @@ int main(int argc, char **argv)
 				break;
 			case 'p':
 				opt_path_audio = optarg;
-				break;
-			case 's':
-				opt_stereo_width = atoi(optarg);
 				break;
 			default:
 				usage(argv[0]);
@@ -333,9 +329,7 @@ int play(int code, int press)
 		TEST_ERROR("source generation");
 
 		double x = find_key_loc(code);
-		if (opt_stereo_width > 0) {
-			alSource3f(src[idx], AL_POSITION, -x, 0, (100 - opt_stereo_width) / 100.0);
-		}
+		alSource3f(src[idx], AL_POSITION, -x, 0, 0.5);
 		alSourcef(src[idx], AL_GAIN, opt_gain / 100.0);
 
 		alSourcei(src[idx], AL_BUFFER, buf[idx]);
