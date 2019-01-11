@@ -7,15 +7,13 @@
 
 void key_pressed_cb(XPointer arg, XRecordInterceptData *d);
 
-int scan(int verbose)
+int scan(void)
 {
 	/* Initialize and start Xrecord context */
 	
 	XRecordRange* rr;
 	XRecordClientSpec rcs;
 	XRecordContext rc;
-
-	printd("Opening Xrecord context");
 
 	Display *dpy = XOpenDisplay(NULL);
 	if(dpy == NULL) {
@@ -82,9 +80,4 @@ void key_pressed_cb(XPointer arg, XRecordInterceptData *d)
 	}
 
 	XRecordFreeData (d);
-}
-
-
-void open_console(void)
-{
 }

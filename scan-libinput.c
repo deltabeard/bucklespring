@@ -72,7 +72,7 @@ static void log_handler(struct libinput *li, enum libinput_log_priority priority
 }
 
 
-int scan(int verbose)
+int scan(void)
 {
 	struct udev *udev;
 	struct libinput *li;
@@ -87,11 +87,6 @@ int scan(int verbose)
 	if(!li) {
 		fprintf(stderr, "Failed to initialize context\n");
 		return -1;
-	}
-
-	if(verbose) {
-		libinput_log_set_handler(li, log_handler);
-		libinput_log_set_priority(li, LIBINPUT_LOG_PRIORITY_DEBUG);
 	}
 
 	if (libinput_udev_assign_seat(li, "seat0")) {
@@ -112,9 +107,3 @@ int scan(int verbose)
 
 	return 0;
 }
-
-
-void open_console(void)
-{
-}
-

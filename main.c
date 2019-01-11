@@ -65,7 +65,6 @@ static double midloc[] = {
 	4.5,
 };
 
-static int opt_verbose = 0;
 static int opt_mute_keycode = DEFAULT_MUTE_KEYCODE;
 static const char *opt_device = NULL;
 static const char *opt_path_audio = PATH_AUDIO;
@@ -77,7 +76,7 @@ int main(int argc, char **argv)
 	int c;
 	int rv = EXIT_SUCCESS;
 
-	while( (c = getopt(argc, argv, "Mhm:vd:p:")) != EOF) {
+	while( (c = getopt(argc, argv, "Mhm:d:p:")) != EOF) {
 		switch(c) {
 			case 'd':
 				opt_device = optarg;
@@ -91,9 +90,6 @@ int main(int argc, char **argv)
 			case 'M':
 				muted = !muted;
 				break;
-			case 'v':
-				opt_verbose++;
-				break;
 			case 'p':
 				opt_path_audio = optarg;
 				break;
@@ -102,10 +98,6 @@ int main(int argc, char **argv)
 				return 1;
 				break;
 		}
-	}
-
-	if(opt_verbose) {
-		open_console();
 	}
 
 	/* Create openal context */
@@ -118,8 +110,6 @@ int main(int argc, char **argv)
 	if (!opt_device) {
 		opt_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
 	}
-
-	printd("Opening OpenAL audio device \"%s\"", opt_device);
 
 	device = alcOpenDevice(opt_device);
 	if (!device) {
@@ -147,9 +137,7 @@ int main(int argc, char **argv)
 		opt_path_audio = env_path;
 	}
 
-	printd("Using wav dir: \"%s\"\n", opt_path_audio);
-
-	scan(opt_verbose);
+	scan();
 
 out:
 	device = alcGetContextsDevice(context);
@@ -173,27 +161,10 @@ static void usage(char *exe)
 		"  -m CODE   use CODE as mute key (default 0x46 for scroll lock)\n"
 		"  -M        start the program muted\n"
 		"  -h        show help\n"
-		"  -p PATH   load .wav files from directory PATH\n"
-		"  -v        increase verbosity / debugging\n",
+		"  -p PATH   load .wav files from directory PATH\n",
 		exe
        );
 }
-
-void printd(const char *fmt, ...)
-{
-	if(opt_verbose) {
-		
-		char buf[256];
-		va_list va;
-
-		va_start(va, fmt);
-		vsnprintf(buf, sizeof(buf), fmt, va);
-		va_end(va);
-
-		fprintf(stderr, "%s\n", buf);
-	}
-}
-
 
 /*
  * Find horizontal position of the given key on the keyboard. returns -1.0 for
@@ -235,7 +206,6 @@ static void handle_mute_key(int mute_key)
 			count ++;
 			if(count == 2) {
 				muted = !muted;
-				printd("Mute %s", muted ? "enabled" : "disabled");
 				count = 0;
 			}
 		} else {
@@ -256,8 +226,6 @@ int play(int code, int press)
 {
 	ALCenum error;
 
-	printd("scancode %d/0x%x", code, code);
-
 	/* Check for mute sequence: ScrollLock down+up+down */
 
 	if (press) {
@@ -273,8 +241,6 @@ int play(int code, int press)
 
 		char fname[256];
 		snprintf(fname, sizeof(fname), "%s/%02x-%d.wav", opt_path_audio, code, press);
-
-		printd("Loading audio file \"%s\"", fname);
 
 		buf[idx] = alureCreateBufferFromFile(fname);
 		if(buf[idx] == 0) {

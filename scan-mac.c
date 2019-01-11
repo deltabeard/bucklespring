@@ -177,7 +177,7 @@ CGEventRef myCGEventCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef
 }
 
 
-int scan(int verbose)
+int scan(void)
 {
 	CFMachPortRef      eventTap;
 	CGEventMask        eventMask;
@@ -205,9 +205,4 @@ int scan(int verbose)
 	CFRunLoopRun();
 
 	return 0;
-}
-
-
-void open_console(void)
-{
 }

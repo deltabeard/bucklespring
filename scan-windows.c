@@ -6,7 +6,6 @@
 
 #include "buckle.h"
 
-void open_console();
 LRESULT CALLBACK handle_kbh(int nCode, WPARAM wParam, LPARAM lParam);
 
 
@@ -14,7 +13,7 @@ static HHOOK kbh = NULL;
 static int state[256] = { 0 };
 
 
-int scan(int verbose)
+int scan(void)
 {
 	HINSTANCE hInst = GetModuleHandle(NULL);
 
@@ -49,28 +48,4 @@ LRESULT CALLBACK handle_kbh(int nCode, WPARAM wParam, LPARAM lParam)
 	}
 
 	return CallNextHookEx(kbh, nCode, wParam, lParam);
-}
-
-
-void open_console()
-{
-	int hConHandle;
-	INT_PTR lStdHandle;
-	CONSOLE_SCREEN_BUFFER_INFO coninfo;
-
-	FILE *fp;
-
-	AllocConsole();
-
-	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &coninfo);
-	coninfo.dwSize.Y = 500;
-	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), coninfo.dwSize);
-
-	lStdHandle = (INT_PTR)GetStdHandle(STD_OUTPUT_HANDLE);
-	hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
-
-	fp = _fdopen( hConHandle, "w" );
-	*stdout = *fp;
-	*stderr = *fp;
-	setvbuf(fp, NULL, _IONBF, 0 );
 }
