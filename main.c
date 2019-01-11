@@ -67,7 +67,6 @@ static double midloc[] = {
 };
 
 static int opt_verbose = 0;
-static int opt_gain = 100;
 static int opt_fallback_sound = 0;
 static int opt_mute_keycode = DEFAULT_MUTE_KEYCODE;
 static const char *opt_device = NULL;
@@ -87,9 +86,6 @@ int main(int argc, char **argv)
 				break;
 			case 'f':
 				opt_fallback_sound = 1;
-				break;
-			case 'g':
-				opt_gain = atoi(optarg);
 				break;
 			case 'h':
 				usage(argv[0]);
@@ -330,7 +326,6 @@ int play(int code, int press)
 
 		double x = find_key_loc(code);
 		alSource3f(src[idx], AL_POSITION, -x, 0, 0.5);
-		alSourcef(src[idx], AL_GAIN, opt_gain / 100.0);
 
 		alSourcei(src[idx], AL_BUFFER, buf[idx]);
 		TEST_ERROR("buffer binding");
