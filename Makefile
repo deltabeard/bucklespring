@@ -7,7 +7,7 @@ PATH_AUDIO ?= "./wav"
 
 CFLAGS	?= -O3 -g
 LDFLAGS ?= -g
-CFLAGS  += -Wall -Werror 
+CFLAGS  += -Wall
 CFLAGS  += -DVERSION=\"$(VERSION)\"
 CFLAGS  += -DPATH_AUDIO=\"$(PATH_AUDIO)\"
 
@@ -34,8 +34,8 @@ else
    CFLAGS  += $(shell pkg-config --cflags openal alure libinput libudev)
    SRC     += scan-libinput.c
   else
-   LIBS    += $(shell pkg-config --libs openal alure xtst x11)
-   CFLAGS  += $(shell pkg-config --cflags openal alure xtst x11)
+   LIBS    += -lasound -lpthread -lX11 -lXtst
+   CFLAGS  += $(shell pkg-config --cflags xtst x11)
    SRC     += scan-x11.c
   endif
  endif

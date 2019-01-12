@@ -10,16 +10,10 @@
 #include <stdbool.h>
 #include <time.h>
 
-
-#ifdef __APPLE__
-#include <OpenAL/al.h>
-#include <OpenAL/alure.h>
-#else
-#include <AL/al.h>
-#include <AL/alure.h>
-#endif
-
 #include "buckle.h"
+
+#define SOKOL_IMPL
+#include "sokol_audio.h"
 
 #define SRC_INVALID INT_MAX
 #define DEFAULT_MUTE_KEYCODE 0x46 /* Scroll Lock */
@@ -32,15 +26,12 @@
 	}
 
 
-static void usage(char *exe);
+static void usage(const char *exe);
 static double find_key_loc(int code);
-
-
 
 /* 
  * Horizontal position on keyboard for each key as they are located on my model-M
  */
-
 static int keyloc[][32] = {
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6e, 0x66, 0x68, 0x1c, 0x45, 0x62, 0x37, 0x4a, -1 },
 	{ 0x01, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x57, 0x58, 0x6f, 0x6b, 0x6d, 0x47, 0x48, 0x49, 0x4e, -1 },
@@ -70,11 +61,9 @@ static const char *opt_device = NULL;
 static const char *opt_path_audio = PATH_AUDIO;
 static int muted = 0;
 
-
 int main(int argc, char **argv)
 {
 	int c;
-	int rv = EXIT_SUCCESS;
 
 	while( (c = getopt(argc, argv, "Mhm:d:p:")) != EOF) {
 		switch(c) {
@@ -100,38 +89,10 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Create openal context */
-
-	ALCdevice *device = NULL;
-	ALCcontext *context = NULL;
-	ALfloat listenerOri[] = { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f };
-	ALCenum error;
-
-	if (!opt_device) {
-		opt_device = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
-	}
-
-	device = alcOpenDevice(opt_device);
-	if (!device) {
-		fprintf(stderr, "unable to open default device\n");
-		rv = EXIT_FAILURE;
-		goto out;
-	}
-
-	context = alcCreateContext(device, NULL);
-	if (!alcMakeContextCurrent(context)) {
-		fprintf(stderr, "failed to make default context\n");
-		return -1;
-	}
-	TEST_ERROR("make default context");
-
-	alListener3f(AL_POSITION, 0, 0, 0);
-	alListener3f(AL_VELOCITY, 0, 0, 0);
-	alListenerfv(AL_ORIENTATION, listenerOri);
+	saudio_setup(&(saudio_desc){0});
 
 	/* Path to data files can also be specified by environment, this is
 	 * used by the snap package */
-
 	const char *env_path = getenv("BUCKLESPRING_WAV_DIR");
 	if (env_path) {
 		opt_path_audio = env_path;
@@ -139,17 +100,12 @@ int main(int argc, char **argv)
 
 	scan();
 
-out:
-	device = alcGetContextsDevice(context);
-	alcMakeContextCurrent(NULL);
-	if(context) alcDestroyContext(context);
-	if(device) alcCloseDevice(device);
-
-	return rv;
+	saudio_shutdown();
+	return EXIT_SUCCESS;
 }
 
 
-static void usage(char *exe)
+static void usage(const char *exe)
 {
 	fprintf(stderr, 
 		"bucklespring version " VERSION "\n"
@@ -170,7 +126,6 @@ static void usage(char *exe)
  * Find horizontal position of the given key on the keyboard. returns -1.0 for
  * left to 1.0 for right 
  */
-
 static double find_key_loc(int code)
 {
 	int row;
@@ -193,8 +148,6 @@ static double find_key_loc(int code)
  * To silence play temporarily, press mute key (default ScrollLock) within 2
  * seconds, same to unmute
  */
-
-
 static void handle_mute_key(int mute_key)
 {
 	static time_t t_prev;
@@ -221,58 +174,38 @@ static void handle_mute_key(int mute_key)
 /*
  * Play audio file for given keycode. Wav files are loaded on demand
  */
-
 int play(int code, int press)
 {
-	ALCenum error;
-
 	/* Check for mute sequence: ScrollLock down+up+down */
-
 	if (press) {
 		handle_mute_key(code == opt_mute_keycode);
 	}
 
-	static ALuint buf[512] = { 0 };
-	static ALuint src[512] = { 0 };
+	char fname[256];
+	FILE* f;
+	long buf_size;
+	char* buf;
+	snprintf(fname, sizeof(fname), "%s/%02x-%d.wav", opt_path_audio, code, press);
 
-	int idx = code + press * 256;
+	f = fopen(fname, "rb");
+	if(f == NULL)
+		return -1;
 
-	if(src[idx] == 0) {
+	fseek(f, 0, SEEK_END);
+	buf_size = ftell(f);
+	rewind(f);
 
-		char fname[256];
-		snprintf(fname, sizeof(fname), "%s/%02x-%d.wav", opt_path_audio, code, press);
+	if(buf_size == -1)
+		return -1;
 
-		buf[idx] = alureCreateBufferFromFile(fname);
-		if(buf[idx] == 0) {
-			fprintf(stderr, "Error opening audio file \"%s\": %s\n", fname, alureGetErrorString());
-			if(buf[idx] == 0) {
-				src[idx] = SRC_INVALID;
-				return -1;
-			}
-		}
-	
-		alGenSources((ALuint)1, &src[idx]);
-		TEST_ERROR("source generation");
+	buf = malloc(buf_size + 1);
+	fread(buf, 1, buf_size, f);
+	fclose(f);
 
-		double x = find_key_loc(code);
-		alSource3f(src[idx], AL_POSITION, -x, 0, 0.5);
+	if (!muted)
+                saudio_push((float*)(buf + 46), (buf_size - 46)/sizeof(float));
 
-		alSourcei(src[idx], AL_BUFFER, buf[idx]);
-		TEST_ERROR("buffer binding");
-	}
-
-
-	if(src[idx] != 0 && src[idx] != SRC_INVALID) {
-		if (!muted)
-			alSourcePlay(src[idx]);
-		TEST_ERROR("source playing");
-	}
+	free(buf);
 
 	return 0;
 }
-
-
-
-/*
- * End
- */
