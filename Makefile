@@ -11,12 +11,13 @@ CFLAGS  += -Wall -Werror
 CFLAGS  += -DVERSION=\"$(VERSION)\"
 CFLAGS  += -DPATH_AUDIO=\"$(PATH_AUDIO)\"
 
-ifdef mingw
+ifeq ($(OS),Windows_NT)
+ # Only tested on MinGW64
  BIN     := $(NAME).exe
- CROSS   := i686-w64-mingw32-
- CFLAGS  += -Iwin32/include -Iwin32/include/AL
- LDFLAGS += -mwindows -static-libgcc -static-libstdc++
- LIBS    += -Lwin32/lib -lALURE32 -lOpenAL32
+ LDFLAGS += -mwindows
+ # ALURE cannot be statically linked in MinGW64, since it depends on many other
+ # libraries that are not required in bucklespring.
+ LIBS    += -lALURE32 -lopenal
  SRC     += scan-windows.c
 else 
  OS := $(shell uname)

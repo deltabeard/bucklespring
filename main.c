@@ -15,8 +15,12 @@
 #include <OpenAL/al.h>
 #include <OpenAL/alure.h>
 #else
+/* The following undef fixes an issue whereby al.h may not be found in MinGW64
+ * systems. */
+#undef _WIN32
 #include <AL/al.h>
 #include <AL/alure.h>
+#define _WIN32 1
 #endif
 
 #include "buckle.h"
