@@ -14,10 +14,10 @@ CFLAGS  += -DPATH_AUDIO=\"$(PATH_AUDIO)\"
 ifeq ($(OS),Windows_NT)
  # Only tested on MinGW64
  BIN     := $(NAME).exe
- LDFLAGS += -mwindows
+ LDFLAGS += -mwindows -static
  # ALURE cannot be statically linked in MinGW64, since it depends on many other
  # libraries that are not required in bucklespring.
- LIBS    += -lALURE32 -lopenal
+ LIBS    += -lalut -lopenal -lcomctl32 -lole32 -loleaut32 -luuid -lwinmm -lgdi32 -ldxguid 
  SRC     += scan-windows.c
 else 
  OS := $(shell uname)

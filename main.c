@@ -13,13 +13,13 @@
 
 #ifdef __APPLE__
 #include <OpenAL/al.h>
-#include <OpenAL/alure.h>
+#include <OpenAL/alut.h>
 #else
 /* The following undef fixes an issue whereby al.h may not be found in MinGW64
  * systems. */
 #undef _WIN32
 #include <AL/al.h>
-#include <AL/alure.h>
+#include <AL/alut.h>
 #define _WIN32 1
 #endif
 
@@ -169,7 +169,9 @@ int main(int argc, char **argv)
 
 	printd("Using wav dir: \"%s\"\n", opt_path_audio);
 
+	alutInitWithoutContext(NULL, NULL);
 	scan(opt_verbose);
+	alutExit();
 
 out:
 	device = alcGetContextsDevice(context);
@@ -288,7 +290,6 @@ static void handle_mute_key(int mute_key)
 	}
 }
 
-
 /*
  * Play audio file for given keycode. Wav files are loaded on demand
  */
@@ -314,17 +315,24 @@ int play(int code, int press)
 
 		char fname[256];
 		snprintf(fname, sizeof(fname), "%s/%02x-%d.wav", opt_path_audio, code, press);
-
 		printd("Loading audio file \"%s\"", fname);
 
-		buf[idx] = alureCreateBufferFromFile(fname);
+		// make sure to call alutInitWithoutContext first
+		buf[idx] = alutCreateBufferFromFile(fname);
+		if(alutGetError() != ALUT_ERROR_NO_ERROR)
+		{
+			// handle the error
+			fprintf(stderr, "Error opening audio file \"%s\"\n", fname);
+			return -1;
+		}
+
 		if(buf[idx] == 0) {
 
 			if(opt_fallback_sound) {
 				snprintf(fname, sizeof(fname), "%s/%02x-%d.wav", opt_path_audio, 0x31, press);
-				buf[idx] = alureCreateBufferFromFile(fname);
+				buf[idx] = alutCreateBufferFromFile(fname);
 			} else {
-				fprintf(stderr, "Error opening audio file \"%s\": %s\n", fname, alureGetErrorString());
+				fprintf(stderr, "Error opening audio file \"%s\"\n", fname);
 			}
 
 			if(buf[idx] == 0) {
