@@ -15,8 +15,6 @@ ifeq ($(OS),Windows_NT)
  # Only tested on MinGW64
  BIN     := $(NAME).exe
  LDFLAGS += -mwindows -static
- # ALURE cannot be statically linked in MinGW64, since it depends on many other
- # libraries that are not required in bucklespring.
  LIBS    += -lalut -lopenal -lcomctl32 -lole32 -loleaut32 -luuid -lwinmm -lgdi32 -ldxguid 
  SRC     += scan-windows.c
 else 
@@ -24,19 +22,19 @@ else
  ifeq ($(OS), Darwin)
   BIN     := $(NAME)
   PKG_CONFIG_PATH := "./mac/lib/pkgconfig" 
-  LIBS    += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs alure openal)
-  CFLAGS  += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags alure openal)
+  LIBS    += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs freealut openal)
+  CFLAGS  += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags freealut openal)
   LDFLAGS += -framework ApplicationServices -framework OpenAL
   SRC     += scan-mac.c
  else
   BIN     := $(NAME)
   ifdef libinput
-   LIBS    += $(shell pkg-config --libs openal alure libinput libudev)
-   CFLAGS  += $(shell pkg-config --cflags openal alure libinput libudev)
+   LIBS    += $(shell pkg-config --libs openal freealut libinput libudev)
+   CFLAGS  += $(shell pkg-config --cflags openal freealut libinput libudev)
    SRC     += scan-libinput.c
   else
-   LIBS    += $(shell pkg-config --libs openal alure xtst x11)
-   CFLAGS  += $(shell pkg-config --cflags openal alure xtst x11)
+   LIBS    += $(shell pkg-config --libs openal freealut xtst x11)
+   CFLAGS  += $(shell pkg-config --cflags openal freealut xtst x11)
    SRC     += scan-x11.c
   endif
  endif
